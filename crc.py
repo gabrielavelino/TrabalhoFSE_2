@@ -34,8 +34,17 @@ def crc16(crc, data):
         0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040]
     return ((crc & 0xFF00) >> 8) ^ tbl[(crc & 0x00FF) ^ (data & 0x00FF)]
 
-def calcula_crc(commands):
+def calcula_CRC(commands,tamanho):
     crc = 0
-    for command in commands:
-        crc = crc16(crc, command)
+    for i in range(tamanho):
+        crc = crc16(crc, commands[i])
     return crc
+
+def main():
+    crc = calcula_CRC(b'\x01\x23\xC1\x05\x05\x00\x00', 7)#.to_bytes(2,'little')
+    print(crc)
+    print(hex(crc))
+    crcstring = str(crc)
+    print(crcstring)
+    bytecrc = crcstring.encode()
+    print(bytecrc)
