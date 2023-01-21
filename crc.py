@@ -40,6 +40,14 @@ def calcula_CRC(commands,tamanho):
         crc = crc16(crc, commands[i])
     return crc
 
+def verificaCRC(resp, crc_resp):
+  crc_calc = calcula_CRC(resp,7).to_bytes(2,'little')
+  if crc_calc == crc_resp:
+    return 'OK'
+  else:
+    print(f'Error-CRC\nCRC recebido: {crc_resp}\nCRC calculado: {crc_calc}')
+    return f'CRC-ERROR'
+
 def main():
     crc = calcula_CRC(b'\x01\x23\xC1\x05\x05\x00\x00', 7)#.to_bytes(2,'little')
     print(crc)
