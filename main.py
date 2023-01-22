@@ -29,6 +29,11 @@ enviaReferencia= b'\x01\x16\xD2\x00\x08\x03\x01' # [7]
 pinResistor = 23
 pinVentoinha = 24
 
+def arqLog(tempAmb,tempInt,tempRef):
+  with open('arquivoLog.csv', 'a+') as logfile:
+    dateNow = time.strftime('%d-%m-%Y %H:%M:%S', time.gmtime())
+    print(f'[{dateNow}] - tempAmbiente: {tempAmb:.1f}C° tempInt: {tempInt:.1f}C° tempRef: {tempRef:.1f}C°',file = logfile)
+
 
 def pid_activation(pidRes, pinResistor, pinVentoinha):
     if pidRes > -40 and pidRes < 0:
@@ -80,6 +85,7 @@ if __name__ == "__main__":
     uart0 = uart.init_uart()
     init_estados(uart0)
     aquecimento = False
+    estadoModoManual = 0
     while True:
 
         #Ler temperatura interna e de Refererencia
@@ -113,11 +119,18 @@ if __name__ == "__main__":
             aquecimento = False
 
         elif cmd == '0xa5':
-            print('ativando curva...')
-            uart.enviarCmd(uart0,ativaCurva)
-            tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
-            tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
-            uart.enviaReferencia(uart0,enviaReferencia,tempRef)
+            if estadoModoManual == 0:
+                print('ativando modo manual / curva...')
+                uart.enviarCmd(uart0,ativaCurva)
+                tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
+                tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
+                pid.pid_atualiza_referencia(tempRef)
+                # uart.enviaReferencia(uart0,enviaReferencia,tempRef)
+                estadoModoManual = 1
+            else: 
+                print('Desativando modo manual / curva...')
+                uart.enviarCmd(uart0,desativaCurva)
+            
         
         elif aquecimento == True:
             
@@ -130,7 +143,7 @@ if __name__ == "__main__":
             # controle = int(pid.pid_controle(tempInt))
             pid_activation(controle, pinResistor, pinVentoinha)
 
-        
+        arqLog(25,str(tempInt),str(tempRef))
             
         # elif KeyboardInterrupt:
         #     uart.enviarCmd(uart0,desligarSistema)
@@ -139,4 +152,4 @@ if __name__ == "__main__":
         #     GPIO.output(pinResistor, GPIO.LOW)
         #     GPIO.output(pinVentoinha, GPIO.LOW)
         #     print('Encerrando sistema!')
-        #     break
+          
