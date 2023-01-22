@@ -79,7 +79,7 @@ def enviarCmd(uart0,comando):
     crc = CRC.calcula_CRC(dados,8)
     crc = crc.to_bytes(2,'little')
     dados = comando + crc
-    print("enviando...")
+    # print("enviando...")
     uart0.write(dados)
     resposta = uart0.read(9)
     if(CRC.verificaCRC(resposta, resposta[-2:]) == 'CRC-ERROR'):
@@ -89,13 +89,13 @@ def enviarCmd(uart0,comando):
     # return str(hex(resposta[3]))
 
 def solicitarTemperatura(uart0,temp):
-    # print('entrou aqui')
+    
     message = temp # C1 = solicitar temperatura
-    # print(message)
+    
     crc = CRC.calcula_CRC(message,7)
     crc = crc.to_bytes(2,'little')
     message = message + crc
-    print("escrevendo temperatura...")
+    # print("escrevendo temperatura...")
     uart0.write(message)
     resposta = uart0.read(9)
     if(CRC.verificaCRC(resposta, resposta[-2:]) == 'CRC-ERROR'):
@@ -105,5 +105,31 @@ def solicitarTemperatura(uart0,temp):
     tempInt = [resposta[3],resposta[4],resposta[5],resposta[6]]
     temperatura = struct.unpack('f', bytearray(tempInt))[0]
     return temperatura
-    # print(int(hex(resposta[3]),16)  + (int(hex(resposta[4]),16)<< 8) + (int(hex(resposta[5]),16) << 16) + (int(hex(resposta[6]),16) << 24))
+
+def enviaSinalControle(uart0,comando,controle):
+    
+    message = comando + controle
+    crc = CRC.calcula_CRC(message,11)
+    crc = crc.to_bytes(2,'little')
+    message = message + crc
+    uart0.write(message)
+    # resposta = uart0.read(9)
+    # if(CRC.verificaCRC(resposta, resposta[-2:]) == 'CRC-ERROR'):
+    #     print('Error no Calculo CRC, tentando de novo...')
+    #     enviaSinalControle(controle)
+    # time.sleep(1)
     # return resposta
+
+def enviaReferencia(uart0,comando,tempRef):
+        
+        message = comando + tempRef
+        crc = CRC.calcula_CRC(message,11)
+        crc = crc.to_bytes(2,'little')
+        message = message + crc
+        uart0.write(message)
+        resposta = uart0.read(5)
+        if(CRC.verificaCRC(resposta, resposta[-2:]) == 'CRC-ERROR'):
+            print('Error no Calculo CRC, tentando de novo...')
+            enviaReferencia(uart0,comando,tempRef)
+        # time.sleep(1)
+        # return resposta

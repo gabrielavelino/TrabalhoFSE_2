@@ -48,11 +48,3 @@ def verificaCRC(resp, crc_resp):
     print(f'Error-CRC\nCRC recebido: {crc_resp}\nCRC calculado: {crc_calc}')
     return f'CRC-ERROR'
 
-def main():
-    crc = calcula_CRC(b'\x01\x23\xC1\x05\x05\x00\x00', 7)#.to_bytes(2,'little')
-    print(crc)
-    print(hex(crc))
-    crcstring = str(crc)
-    print(crcstring)
-    bytecrc = crcstring.encode()
-    print(bytecrc)

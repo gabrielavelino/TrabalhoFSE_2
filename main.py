@@ -2,20 +2,18 @@ import RPi.GPIO as GPIO
 import CRC
 import serial
 import time
-import os
-import sys
 import pid
 import struct
 import time
 import uart
 
 
+
 # Esp32 + Ler ou enviar + subCod + matricula + estado
 solicitarTempInt = b'\x01\x23\xC1\x00\x08\x03\x01' # [7]
-# solicitarTempInt2 = [b'\x01', b'\x23',b'\xC1',b'\x00',b'\x08',b'\x03',b'\x01']
 solicitaTempRef = b'\x01\x23\xC2\x00\x08\x03\x01' # [7]
 usuario = b'\x01\x23\xC3\0\8\3\1' # [7]
-enviaInt = b'\x01\x23\xC3\0\8\3\1' # [7]
+enviaInt = b'\x01\x16\xD1\x00\x08\x03\x01' # [7]
 
 ligarSistema = b'\x01\x16\xD3\x00\x08\x03\x01\1' # [8]
 desligarSistema = b'\x01\x16\xD3\x00\x08\x03\x01\0' # [8]
@@ -25,7 +23,29 @@ algoritmoOff = b'\x01\x16\xD5\x00\x08\x03\x01\0' # [8]
 ativaCurva = b'\x01\x16\xD4\x00\x08\x03\x01\1' # [8]
 desativaCurva = b'\x01\x16\xD4\x00\x08\x03\x01\0' # [8]
 
-enviaReferencia= b'\x01\x16\xD2\0\8\3\1' # [7]
+enviaReferencia= b'\x01\x16\xD2\x00\x08\x03\x01' # [7]
+
+#GPIO
+pinResistor = 23
+pinVentoinha = 24
+
+
+def pid_activation(pidRes, pinResistor, pinVentoinha):
+    if pidRes > -40 and pidRes < 0:
+        pidRes = -40
+    print("PID: ", pidRes)
+    pidResB = pidRes.to_bytes(4, 'little',signed=True)
+    uart.enviaSinalControle(uart0,enviaInt, pidResB)  # Not sure what this function does, so it's not included in the Python version
+    if pidRes < 0:
+        GPIO.output(pinResistor, False)
+        time.sleep(0.5)
+        GPIO.output(pinVentoinha, True)
+        time.sleep(0.5)
+    elif pidRes > 0:
+        GPIO.output(pinVentoinha, False)
+        time.sleep(0.5)
+        GPIO.output(pinResistor, True)
+        time.sleep(0.5)
 
 
 def init_estados(uart0):
@@ -43,53 +63,38 @@ def init_estados(uart0):
 
 
 
-def init_gpio():
+def init_gpio(pinResistor,pinVentoinha):
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
-    GPIO.setup(23, GPIO.OUT)
-    GPIO.setup(24, GPIO.OUT)
+    GPIO.setup(pinResistor, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(pinVentoinha, GPIO.OUT, initial=GPIO.LOW)
+    resistor = GPIO.PWM(pinResistor, 50)
+    ventoinha = GPIO.PWM(pinVentoinha, 50)
     print("GPIO inicializado com sucesso!")
+    return resistor, ventoinha
 
-
-
-# def solicitarTemperatura(uart0,temp):
-#     # print('entrou aqui')
-#     message = temp # C1 = solicitar temperatura
-#     # print(message)
-#     crc = CRC.calcula_CRC(message,7)
-#     crc = crc.to_bytes(2,'little')
-#     message = message + crc
-#     print("escrevendo temperatura...")
-#     uart0.write(message)
-#     resposta = uart0.read(9)
-#     if(CRC.verificaCRC(resposta, resposta[-2:]) == 'CRC-ERROR'):
-#         print('Error no Calculo CRC, tentando de novo...')
-#         solicitarTemperatura(uart0,temp)
-#     time.sleep(1)
-#     tempInt = [resposta[3],resposta[4],resposta[5],resposta[6]]
-#     temperatura = struct.unpack('f', bytearray(tempInt))[0]
-#     return temperatura
-#     # print(int(hex(resposta[3]),16)  + (int(hex(resposta[4]),16)<< 8) + (int(hex(resposta[5]),16) << 16) + (int(hex(resposta[6]),16) << 24))
-#     # return resposta
 
 
 if __name__ == "__main__":
-    init_gpio()
+    ventoinha,resistor = init_gpio(pinVentoinha,pinResistor)
     uart0 = uart.init_uart()
     init_estados(uart0)
-    # solicitarTemperatura(uart0)
-    # requestFloat(solicitarTempInt2,uart0)
-    # enviarCmd(uart0)
-    
+    aquecimento = False
     while True:
+
+        #Ler temperatura interna e de Refererencia
         tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
         print('TempInt: ' + str(tempInt))
         tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
         print('TempREF: ' + str(tempRef))
+
         time.sleep(1)
+
+        #Ler comando do usuario
         cmd = uart.lerCmd(uart0)
         cmd = str(hex(cmd[3]))
-        print(cmd)
+        print('Comando usuario: ' + cmd)
+
         if cmd == '0xa1':
             print("Ligar forno...")
             uart.enviarCmd(uart0,ligarSistema)
@@ -99,6 +104,39 @@ if __name__ == "__main__":
         elif cmd == '0xa3':
             print('iniciando aquecimento...')
             uart.enviarCmd(uart0,algoritmoOn)
+            aquecimento = True
+                    
+        
         elif cmd == '0xa4':
             print('desligando aquecimento...')
             uart.enviarCmd(uart0,algoritmoOff)
+            aquecimento = False
+
+        elif cmd == '0xa5':
+            print('ativando curva...')
+            uart.enviarCmd(uart0,ativaCurva)
+            tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
+            tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
+            uart.enviaReferencia(uart0,enviaReferencia,tempRef)
+        
+        elif aquecimento == True:
+            
+            tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
+            tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
+            pid.pid_atualiza_referencia(tempRef)
+            controle = int(pid.pid_controle(tempInt))
+            controleBytes = controle.to_bytes(4, 'little',signed=True) #signed True?
+            uart.enviaSinalControle(uart0,enviaInt,controleBytes)
+            # controle = int(pid.pid_controle(tempInt))
+            pid_activation(controle, pinResistor, pinVentoinha)
+
+        
+            
+        # elif KeyboardInterrupt:
+        #     uart.enviarCmd(uart0,desligarSistema)
+        #     uart.enviarCmd(uart0,algoritmoOff)
+        #     uart.enviarCmd(uart0,desativaCurva)
+        #     GPIO.output(pinResistor, GPIO.LOW)
+        #     GPIO.output(pinVentoinha, GPIO.LOW)
+        #     print('Encerrando sistema!')
+        #     break
