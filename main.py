@@ -130,6 +130,7 @@ if __name__ == "__main__":
             else: 
                 print('Desativando modo manual / curva...')
                 uart.enviarCmd(uart0,desativaCurva)
+                estadoModoManual = 0
             
         
         elif aquecimento == True:
