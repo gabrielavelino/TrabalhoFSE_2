@@ -31,8 +31,12 @@ pinVentoinha = 24
 
 def arqLog(tempAmb,tempInt,tempRef):
   with open('arquivoLog.csv', 'a+') as logfile:
+    # arquivo = open('arquivoLog.csv', 'a+')
     dateNow = time.strftime('%d-%m-%Y %H:%M:%S', time.gmtime())
     print(f'[{dateNow}] - tempAmbiente: {tempAmb:.1f}C° tempInt: {tempInt:.1f}C° tempRef: {tempRef:.1f}C°',file = logfile)
+    # arquivo.write(f'{dateNow} - tempAmbiente: {tempAmb:.1f}C° tempInt: {tempInt:.1f}C° tempRef: {tempRef:.1f}C°')
+    # Ajustar arquivo Log
+    
 
 
 def pid_activation(pidRes, pinResistor, pinVentoinha):
@@ -40,7 +44,7 @@ def pid_activation(pidRes, pinResistor, pinVentoinha):
         pidRes = -40
     print("PID: ", pidRes)
     pidResB = pidRes.to_bytes(4, 'little',signed=True)
-    uart.enviaSinalControle(uart0,enviaInt, pidResB)  # Not sure what this function does, so it's not included in the Python version
+    uart.enviaSinalControle(uart0,enviaInt, pidResB)
     if pidRes < 0:
         GPIO.output(pinResistor, False)
         time.sleep(0.5)
