@@ -1,10 +1,10 @@
 saida_medida = 0.0
 sinal_de_controle = 0.0
 referencia = 0.0
-Kp = 0.0  # Proportional gain
-Ki = 0.0  # Integral gain
-Kd = 0.0  # Derivative gain
-T = 1.0   # Sampling period (ms)
+Kp = 0.0  
+Ki = 0.0  
+Kd = 0.0  
+T = 1.0   
 last_time = 0
 erro_total = 0.0
 erro_anterior = 0.0
@@ -25,16 +25,16 @@ def pid_controle(saida_medida_):
     global sinal_de_controle, erro_total, erro_anterior
     erro = referencia - saida_medida_
 
-    erro_total += erro  # accumulate error (Integral term)
+    erro_total += erro  
 
     if erro_total >= sinal_de_controle_MAX:
         erro_total = sinal_de_controle_MAX
     elif erro_total <= sinal_de_controle_MIN:
         erro_total = sinal_de_controle_MIN
 
-    delta_error = erro - erro_anterior  # difference between errors (Derivative term)
+    delta_error = erro - erro_anterior 
 
-    sinal_de_controle = Kp*erro + (Ki*T)*erro_total + (Kd/T)*delta_error  # PID calculates control signal
+    sinal_de_controle = Kp*erro + (Ki*T)*erro_total + (Kd/T)*delta_error  
 
     if sinal_de_controle >= sinal_de_controle_MAX:
         sinal_de_controle = sinal_de_controle_MAX

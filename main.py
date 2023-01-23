@@ -30,12 +30,10 @@ pinResistor = 23
 pinVentoinha = 24
 
 def arqLog(tempAmb,tempInt,tempRef):
-  with open('arquivoLog.csv', 'a+') as logfile:
-    # arquivo = open('arquivoLog.csv', 'a+')
+
+    arquivo = open('arquivoLog.csv', 'a+')
     dateNow = time.strftime('%d-%m-%Y %H:%M:%S', time.gmtime())
-    print(f'[{dateNow}] - tempAmbiente: {tempAmb:.1f}C° tempInt: {tempInt:.1f}C° tempRef: {tempRef:.1f}C°',file = logfile)
-    # arquivo.write(f'{dateNow} - tempAmbiente: {tempAmb:.1f}C° tempInt: {tempInt:.1f}C° tempRef: {tempRef:.1f}C°')
-    # Ajustar arquivo Log
+    arquivo.write(f'{dateNow} - tempAmbiente: {tempAmb:.1f}C° tempInt: {tempInt:.1f}C° tempRef: {tempRef:.1f}C°\n')
     
 
 
@@ -147,8 +145,7 @@ if __name__ == "__main__":
             uart.enviaSinalControle(uart0,enviaInt,controleBytes)
             # controle = int(pid.pid_controle(tempInt))
             pid_activation(controle, pinResistor, pinVentoinha)
-
-        arqLog(25,tempInt,tempRef)
+            arqLog(30,tempInt,tempRef)
             
         # elif KeyboardInterrupt:
         #     uart.enviarCmd(uart0,desligarSistema)
