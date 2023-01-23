@@ -144,7 +144,7 @@ if __name__ == "__main__":
             # controle = int(pid.pid_controle(tempInt))
             pid_activation(controle, pinResistor, pinVentoinha)
 
-        arqLog(25,str(tempInt),str(tempRef))
+        arqLog(25,tempInt,tempRef)
             
         # elif KeyboardInterrupt:
         #     uart.enviarCmd(uart0,desligarSistema)
