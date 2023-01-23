@@ -9,6 +9,25 @@
 
 O trabalho tem como objetivo simular um sistema que representa o controle de um forno de soldagem de placas de circuitos. O aluno irá desenvolver um software para o controle desse sistema, com um resistor para aumentar o nível de calor e uma ventoinha para reduzir as altas temperaturas.
 
+## Experimentos
+
+O primeiro teste com o PID e temperatura de referência fixa.
+<br>
+<br>
+![Experimento](img/PrimeiroExperimento.png)
+<br>
+<br>
+Podemos ver no terminal também, a temperatura interna se aproxima da temperatura de referência.
+<br>
+<br>
+![Experimento](img/terminal.png)
+<br>
+<br>
+
+O **vídeo** do experimento se encontra na pasta Video, disponível em mp4.
+
+
+
 ## Componentes do Sistema
 O sistema é composto por:
 
