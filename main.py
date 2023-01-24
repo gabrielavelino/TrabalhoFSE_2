@@ -90,73 +90,74 @@ if __name__ == "__main__":
     init_estados(uart0)
     aquecimento = False
     estadoModoManual = 0
-    while True:
-        tempAmb = BME.init_I2C()
-        tempAmbBytes = struct.pack('f',tempAmb)
-        print('TempAmb: ' + str(tempAmb))
-        uart.enviaTempAmbiente(uart0,enviaTempAmb,tempAmbBytes)
-        #Ler temperatura interna e de Refererencia
-        tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
-        print('TempInt: ' + str(tempInt))
-        tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
-        print('TempREF: ' + str(tempRef))
+    try:
+        while True:
+            tempAmb = BME.init_I2C()
+            tempAmbBytes = struct.pack('f',tempAmb)
+            print('TempAmb: ' + str(tempAmb))
+            uart.enviaTempAmbiente(uart0,enviaTempAmb,tempAmbBytes)
+            #Ler temperatura interna e de Refererencia
+            tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
+            print('TempInt: ' + str(tempInt))
+            tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
+            print('TempREF: ' + str(tempRef))
 
-        time.sleep(1)
+            time.sleep(1)
 
-        #Ler comando do usuario
-        cmd = uart.lerCmd(uart0)
-        cmd = str(hex(cmd[3]))
-        print('Comando usuario: ' + cmd)
+            #Ler comando do usuario
+            cmd = uart.lerCmd(uart0)
+            cmd = str(hex(cmd[3]))
+            print('Comando usuario: ' + cmd)
 
-        if cmd == '0xa1':
-            print("Ligar forno...")
-            uart.enviarCmd(uart0,ligarSistema)
-        elif cmd == '0xa2':
-            print("Desligar forno...")
-            uart.enviarCmd(uart0,desligarSistema)
-        elif cmd == '0xa3':
-            print('iniciando aquecimento...')
-            uart.enviarCmd(uart0,algoritmoOn)
-            aquecimento = True
-                    
-        
-        elif cmd == '0xa4':
-            print('desligando aquecimento...')
-            uart.enviarCmd(uart0,algoritmoOff)
-            aquecimento = False
+            if cmd == '0xa1':
+                print("Ligar forno...")
+                uart.enviarCmd(uart0,ligarSistema)
+            elif cmd == '0xa2':
+                print("Desligar forno...")
+                uart.enviarCmd(uart0,desligarSistema)
+            elif cmd == '0xa3':
+                print('iniciando aquecimento...')
+                uart.enviarCmd(uart0,algoritmoOn)
+                aquecimento = True
+                        
+            
+            elif cmd == '0xa4':
+                print('desligando aquecimento...')
+                uart.enviarCmd(uart0,algoritmoOff)
+                aquecimento = False
 
-        elif cmd == '0xa5':
-            if estadoModoManual == 0:
-                print('ativando modo manual / curva...')
-                uart.enviarCmd(uart0,ativaCurva)
+            elif cmd == '0xa5':
+                if estadoModoManual == 0:
+                    print('ativando modo manual / curva...')
+                    uart.enviarCmd(uart0,ativaCurva)
+                    tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
+                    tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
+                    pid.pid_atualiza_referencia(tempRef)
+                    # uart.enviaReferencia(uart0,enviaReferencia,tempRef)
+                    estadoModoManual = 1
+                else: 
+                    print('Desativando modo manual / curva...')
+                    uart.enviarCmd(uart0,desativaCurva)
+                    estadoModoManual = 0
+                
+            
+            elif aquecimento == True:
+                
                 tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
                 tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
                 pid.pid_atualiza_referencia(tempRef)
-                # uart.enviaReferencia(uart0,enviaReferencia,tempRef)
-                estadoModoManual = 1
-            else: 
-                print('Desativando modo manual / curva...')
-                uart.enviarCmd(uart0,desativaCurva)
-                estadoModoManual = 0
-            
-        
-        elif aquecimento == True:
-            
-            tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
-            tempRef = uart.solicitarTemperatura(uart0,solicitaTempRef)
-            pid.pid_atualiza_referencia(tempRef)
-            controle = int(pid.pid_controle(tempInt))
-            controleBytes = controle.to_bytes(4, 'little',signed=True) #signed True?
-            uart.enviaSinalControle(uart0,enviaInt,controleBytes)
-            # controle = int(pid.pid_controle(tempInt))
-            pid_activation(controle, pinResistor, pinVentoinha)
-            arqLog(tempAmb,tempInt,tempRef,controle)
-            
-        # elif KeyboardInterrupt:
-        #     uart.enviarCmd(uart0,desligarSistema)
-        #     uart.enviarCmd(uart0,algoritmoOff)
-        #     uart.enviarCmd(uart0,desativaCurva)
-        #     GPIO.output(pinResistor, GPIO.LOW)
-        #     GPIO.output(pinVentoinha, GPIO.LOW)
-        #     print('Encerrando sistema!')
+                controle = int(pid.pid_controle(tempInt))
+                controleBytes = controle.to_bytes(4, 'little',signed=True) #signed True?
+                uart.enviaSinalControle(uart0,enviaInt,controleBytes)
+                # controle = int(pid.pid_controle(tempInt))
+                pid_activation(controle, pinResistor, pinVentoinha)
+                arqLog(tempAmb,tempInt,tempRef,controle)
+    
+    except KeyboardInterrupt:
+            uart.enviarCmd(uart0,desligarSistema)
+            uart.enviarCmd(uart0,algoritmoOff)
+            uart.enviarCmd(uart0,desativaCurva)
+            GPIO.output(pinResistor, GPIO.LOW)
+            GPIO.output(pinVentoinha, GPIO.LOW)
+            print('Encerrando sistema!')
           
