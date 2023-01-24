@@ -49,6 +49,9 @@ O sistema é composto por:
 - Serial
 - Time
 - Struct
+- Rpi.bme280
+- smbus2
+
 
 ## Arquitetura de arquivos
 
@@ -65,6 +68,13 @@ O projeto encontra-se na pasta principal divido em arquivos que são importados 
 
 ### uart.py
     - Arquivo onde possui as funções importadas pela main.py que realiza as comunicações necessárias com a ESP32.
+
+### BME.py
+    - Arquivo onde possui a função para pegar a temperatura ambiente.
+
+### arquivoLog.csv
+    - Arquivo onde pega os dados em tempo das temperaturas ambiente, temperatura interna, temperatura de referencia e o sinal de controle.
+
 
 ## Como funciona
 
