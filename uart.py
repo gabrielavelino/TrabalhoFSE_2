@@ -133,3 +133,13 @@ def enviaReferencia(uart0,comando,tempRef):
             enviaReferencia(uart0,comando,tempRef)
         # time.sleep(1)
         # return resposta
+
+def enviaTempAmbiente(uart0,comando,tempAmb):
+    
+    message = comando + tempAmb # Envia a temperatura ambiente
+    
+    crc = CRC.calcula_CRC(message,11)
+    crc = crc.to_bytes(2,'little')
+    message = message + crc
+    # print("escrevendo temperatura...")
+    uart0.write(message)

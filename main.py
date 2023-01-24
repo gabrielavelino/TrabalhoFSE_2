@@ -6,6 +6,7 @@ import pid
 import struct
 import time
 import uart
+import BME
 
 
 
@@ -14,6 +15,7 @@ solicitarTempInt = b'\x01\x23\xC1\x00\x08\x03\x01' # [7]
 solicitaTempRef = b'\x01\x23\xC2\x00\x08\x03\x01' # [7]
 usuario = b'\x01\x23\xC3\0\8\3\1' # [7]
 enviaInt = b'\x01\x16\xD1\x00\x08\x03\x01' # [7]
+enviaTempAmb = b'\x01\x16\xD6\x00\x08\x03\x01' 
 
 ligarSistema = b'\x01\x16\xD3\x00\x08\x03\x01\1' # [8]
 desligarSistema = b'\x01\x16\xD3\x00\x08\x03\x01\0' # [8]
@@ -38,7 +40,7 @@ def arqLog(tempAmb,tempInt,tempRef):
 
 
 def pid_activation(pidRes, pinResistor, pinVentoinha):
-    if pidRes > -40 and pidRes < 0:
+    if pidRes > -40 and pidRes < 0: # Ventoinha não funciona entre 0 e 40
         pidRes = -40
     print("PID: ", pidRes)
     pidResB = pidRes.to_bytes(4, 'little',signed=True)
@@ -89,7 +91,10 @@ if __name__ == "__main__":
     aquecimento = False
     estadoModoManual = 0
     while True:
-
+        tempAmb = BME.init_I2C()
+        tempAmbBytes = struct.pack('f',tempAmb)
+        print('TempAmb: ' + str(tempAmb))
+        uart.enviaTempAmbiente(uart0,enviaTempAmb,tempAmbBytes)
         #Ler temperatura interna e de Refererencia
         tempInt = uart.solicitarTemperatura(uart0,solicitarTempInt)
         print('TempInt: ' + str(tempInt))
@@ -145,7 +150,7 @@ if __name__ == "__main__":
             uart.enviaSinalControle(uart0,enviaInt,controleBytes)
             # controle = int(pid.pid_controle(tempInt))
             pid_activation(controle, pinResistor, pinVentoinha)
-            arqLog(30,tempInt,tempRef)
+            arqLog(tempAmb,tempInt,tempRef)
             
         # elif KeyboardInterrupt:
         #     uart.enviarCmd(uart0,desligarSistema)
